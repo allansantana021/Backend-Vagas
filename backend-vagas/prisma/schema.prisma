@@ -1,0 +1,110 @@
+// Schema do microsserviço de vagas (MySQL).
+// Baseado no modelo do MySQL Workbench; nomes de tabelas/colunas mantidos via @map / @@map.
+// Acrescentado em relação ao modelo original (necessário para as telas):
+//   - vaga: cidade, modalidade, tipo_contrato, publicada_em
+//   - tabela candidatura
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Status {
+  id        Int     @id @default(autoincrement()) @map("id_status")
+  nome      String? @map("status_nome") @db.VarChar(45)
+  descricao String? @map("status_descricao") @db.Text
+  vagas     Vaga[]
+
+  @@map("status")
+}
+
+model Area {
+  id     Int     @id @default(autoincrement()) @map("area_id")
+  nome   String? @map("area_nome") @db.VarChar(100)
+  status Int?    @map("area_status")
+  vagas  Vaga[]
+
+  @@map("area")
+}
+
+model Nivel {
+  id     Int     @id @default(autoincrement()) @map("nivel_id")
+  nome   String? @map("nivel_string") @db.VarChar(45)
+  status Int?    @map("nivel_status")
+  vagas  Vaga[]
+
+  @@map("nivel")
+}
+
+model Vaga {
+  id           Int      @id @default(autoincrement()) @map("vaga_id")
+  titulo       String?  @map("vaga_titulo") @db.VarChar(100)
+  descricao    String?  @map("vaga_descricao") @db.Text
+  salarioMin   Decimal? @map("vaga_salario_min") @db.Decimal(10, 2)
+  salarioMax   Decimal? @map("vaga_salario_max") @db.Decimal(10, 2)
+  vagaStatus   String?  @map("vaga_status") @db.VarChar(45)
+  cidade       String?  @map("vaga_cidade") @db.VarChar(100)
+  modalidade   String?  @map("vaga_modalidade") @db.VarChar(20)
+  tipoContrato String?  @map("vaga_tipo_contrato") @db.VarChar(20)
+  publicadaEm  DateTime @default(now()) @map("vaga_publicada_em")
+  statusId     Int      @map("status_id")
+  areaId       Int      @map("area_id")
+  nivelId      Int      @map("nivel_id")
+  // IDs que pertencem a outro microsserviço (sem FK de propósito)
+  empresaId    Int      @map("empresa_id")
+  recrutadorId Int      @map("recrutador_id")
+
+  status       Status        @relation(fields: [statusId], references: [id])
+  area         Area          @relation(fields: [areaId], references: [id])
+  nivel        Nivel         @relation(fields: [nivelId], references: [id])
+  requisitos   Requisito[]
+  habilidades  Habilidade[]
+  candidaturas Candidatura[]
+
+  @@index([statusId], map: "fk_vaga_status1_idx")
+  @@index([areaId], map: "fk_vaga_area1_idx")
+  @@index([nivelId], map: "fk_vaga_nivel1_idx")
+  @@index([empresaId], map: "idx_vaga_empresa")
+  @@map("vaga")
+}
+
+model Requisito {
+  id        Int     @id @default(autoincrement()) @map("requisito_id")
+  descricao String? @map("requisito_descricao") @db.Text
+  status    Int?    @map("requisito_status")
+  vagaId    Int     @map("vaga_id")
+  vaga      Vaga    @relation(fields: [vagaId], references: [id])
+
+  @@index([vagaId], map: "fk_requisito_vaga1_idx")
+  @@map("requisito")
+}
+
+model Habilidade {
+  id        Int     @id @default(autoincrement()) @map("skill_id")
+  nome      String? @map("skill_nome") @db.VarChar(45)
+  descricao String? @map("skill_descricao") @db.Text
+  status    Int?    @map("skill_status")
+  vagaId    Int     @map("vaga_id")
+  vaga      Vaga    @relation(fields: [vagaId], references: [id])
+
+  @@index([vagaId], map: "fk_skill_vaga1_idx")
+  @@map("skill")
+}
+
+model Candidatura {
+  id       Int      @id @default(autoincrement()) @map("candidatura_id")
+  vagaId   Int      @map("vaga_id")
+  // ID do aluno (pertence ao microsserviço de usuários)
+  alunoId  Int      @map("aluno_id")
+  status   String   @default("Enviada") @map("candidatura_status") @db.VarChar(20)
+  criadaEm DateTime @default(now()) @map("candidatura_criada_em")
+  vaga     Vaga     @relation(fields: [vagaId], references: [id])
+
+  @@unique([vagaId, alunoId], map: "uq_candidatura_vaga_aluno")
+  @@index([alunoId], map: "idx_candidatura_aluno")
+  @@map("candidatura")
+}

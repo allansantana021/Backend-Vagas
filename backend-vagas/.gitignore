@@ -1,0 +1,15 @@
+# Dependências e build
+node_modules/
+dist/
+
+# Segredos (mesmo usando Infisical)
+.env
+.env.*
+!.env.example
+
+# Logs / sistema / editor
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
