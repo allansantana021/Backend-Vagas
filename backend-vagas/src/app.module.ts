@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AreaModule } from './area/area.module';
 import { AuthModule } from './auth/auth.module';
 import { CandidaturaModule } from './candidatura/candidatura.module';
+import { EventosModule } from './eventos/eventos.module';
 import { HabilidadeModule } from './habilidade/habilidade.module';
 import { NivelModule } from './nivel/nivel.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -16,6 +17,7 @@ import { VagaModule } from './vaga/vaga.module';
     // injetadas pelo Infisical ou, localmente, lidas do arquivo .env
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    EventosModule,
     AuthModule,
     VagaModule,
     CandidaturaModule,

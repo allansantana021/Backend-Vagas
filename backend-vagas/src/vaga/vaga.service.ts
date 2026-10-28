@@ -3,10 +3,12 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Usuario } from '../auth/usuario.interface';
 import { exigirDonoOuAdmin, podeGerenciarVaga } from '../common/permissoes';
+import { PublicadorEventos } from '../eventos/publicador-eventos.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { STATUS } from './constantes';
 import { AtualizarVagaDto } from './dto/atualizar-vaga.dto';
@@ -17,7 +19,10 @@ const INCLUIR_BASE = { area: true, nivel: true, status: true } as const;
 
 @Injectable()
 export class VagaService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly eventos?: PublicadorEventos,
+  ) {}
 
   // ---------- utilidades ----------
 
@@ -70,7 +75,7 @@ export class VagaService {
     }
 
     const { empresaId: _e, recrutadorId: _r, ...dados } = dto;
-    return this.prisma.vaga.create({
+    const vaga = await this.prisma.vaga.create({
       data: {
         ...dados,
         empresaId,
@@ -80,6 +85,12 @@ export class VagaService {
       },
       include: INCLUIR_BASE,
     });
+    this.eventos?.publicar('vaga.criada', {
+      id: vaga.id,
+      titulo: vaga.titulo,
+      empresaId: vaga.empresaId,
+    });
+    return vaga;
   }
 
   // Catálogo: alunos/empresas veem só vagas Ativas; admin vê todas
@@ -162,6 +173,7 @@ export class VagaService {
       this.prisma.habilidade.deleteMany({ where: { vagaId: id } }),
       this.prisma.vaga.delete({ where: { id } }),
     ]);
+    this.eventos?.publicar('vaga.removida', { id, empresaId: vaga.empresaId });
     return { mensagem: `Vaga ${id} removida com sucesso` };
   }
 
@@ -181,11 +193,18 @@ export class VagaService {
         `Não é possível mudar a vaga de "${atual}" para "${para}"`,
       );
     }
-    return this.prisma.vaga.update({
+    const atualizada = await this.prisma.vaga.update({
       where: { id },
       data: { statusId: await this.idDoStatus(para) },
       include: INCLUIR_BASE,
     });
+    this.eventos?.publicar('vaga.status_alterado', {
+      id,
+      empresaId: vaga.empresaId,
+      de: atual,
+      para,
+    });
+    return atualizada;
   }
 
   // Moderação (somente admin, garantido pelo @Papeis no controller)

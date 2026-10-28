@@ -28,7 +28,7 @@
     "prisma:studio:infisical": "infisical run --env=dev -- prisma studio",
     "seed:infisical": "infisical run --env=dev -- ts-node prisma/seed.ts",
     "token:infisical": "infisical run --env=dev -- ts-node scripts/gerar-token.ts",
-    "start:dev:infisical": "infisical run --env=dev -- nest start --watch",
+    "start:dev:infisical": "npx infisical run --env=dev -- nest start --watch",
     "start:prod:infisical": "infisical run --env=dev -- node dist/main"
   },
   "dependencies": {
@@ -39,6 +39,8 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.4.2",
     "@prisma/client": "^6.19.3",
+    "amqp-connection-manager": "^5.0.1",
+    "amqplib": "^2.2.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^18.0.9",
@@ -49,6 +51,7 @@
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
+    "@types/amqplib": "^0.10.8",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",

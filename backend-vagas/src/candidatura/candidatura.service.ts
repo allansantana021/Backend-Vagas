@@ -4,16 +4,21 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Usuario } from '../auth/usuario.interface';
 import { exigirDonoOuAdmin } from '../common/permissoes';
+import { PublicadorEventos } from '../eventos/publicador-eventos.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { STATUS } from '../vaga/constantes';
 import { AtualizarStatusCandidaturaDto } from './dto/atualizar-status-candidatura.dto';
 
 @Injectable()
 export class CandidaturaService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly eventos?: PublicadorEventos,
+  ) {}
 
   // Aluno se candidata a uma vaga Ativa (uma candidatura por vaga)
   async candidatar(vagaId: number, aluno: Usuario) {
@@ -32,9 +37,16 @@ export class CandidaturaService {
     if (existente) {
       throw new ConflictException('Você já se candidatou a esta vaga');
     }
-    return this.prisma.candidatura.create({
+    const candidatura = await this.prisma.candidatura.create({
       data: { vagaId, alunoId: aluno.id },
     });
+    this.eventos?.publicar('candidatura.criada', {
+      id: candidatura.id,
+      vagaId,
+      alunoId: aluno.id,
+      empresaId: vaga.empresaId,
+    });
+    return candidatura;
   }
 
   // Tela "Minhas candidaturas" do aluno
@@ -58,6 +70,11 @@ export class CandidaturaService {
       );
     }
     await this.prisma.candidatura.delete({ where: { id } });
+    this.eventos?.publicar('candidatura.cancelada', {
+      id,
+      vagaId: candidatura.vagaId,
+      alunoId: candidatura.alunoId,
+    });
     return { mensagem: `Candidatura ${id} cancelada` };
   }
 
@@ -84,9 +101,16 @@ export class CandidaturaService {
     if (!candidatura)
       throw new NotFoundException(`Candidatura ${id} não encontrada`);
     exigirDonoOuAdmin(usuario, candidatura.vaga);
-    return this.prisma.candidatura.update({
+    const atualizada = await this.prisma.candidatura.update({
       where: { id },
       data: { status: dto.status },
     });
+    this.eventos?.publicar('candidatura.status_atualizado', {
+      id,
+      vagaId: candidatura.vagaId,
+      alunoId: candidatura.alunoId,
+      status: dto.status,
+    });
+    return atualizada;
   }
 }
