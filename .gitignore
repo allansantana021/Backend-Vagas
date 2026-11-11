@@ -1,7 +1,7 @@
 # Dependências e build
 node_modules/
 dist/
-
+src/generated/
 # Segredos (mesmo usando Infisical)
 .env
 .env.*

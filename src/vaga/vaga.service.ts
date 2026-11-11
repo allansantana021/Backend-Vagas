@@ -5,7 +5,7 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client';
 import { Usuario } from '../auth/usuario.interface';
 import { exigirDonoOuAdmin, podeGerenciarVaga } from '../common/permissoes';
 import { PublicadorEventos } from '../eventos/publicador-eventos.service';
