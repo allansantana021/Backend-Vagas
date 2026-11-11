@@ -1,0 +1,19 @@
+services:
+  vagas-vaga:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: vagas-vaga:latest
+
+    container_name: vagas-vaga
+
+    ports:
+      - "7533:7533"
+
+    env_file:
+      - .env
+
+    environment:
+      NODE_ENV: production
+      PORT: "7533"
