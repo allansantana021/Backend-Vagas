@@ -15,7 +15,7 @@ RUN apt-get update && \
 COPY package*.json ./
 
 # Instalar dependências
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Copiar código-fonte
 COPY . .
